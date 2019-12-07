@@ -1,0 +1,67 @@
+# docker compose version
+version: '3.7'
+
+# networks definition
+networks:
+  frontend:
+    driver: bridge
+  backend:
+    driver: bridge
+
+# volumes definition
+volumes:
+  mysql:
+    driver: local
+  redis:
+    driver: local
+
+# services definition
+services:
+  workspace:
+    build: ./workspace
+    volumes:
+      - ./workspace/src:/var/www/html
+    networks:
+      - backend
+
+  mailhog:
+    build: ./mailhog
+    ports:
+      - "8025:8025"
+    networks:
+      - backend
+
+  mysql:
+    build: ./mysql
+    environment:
+      - MYSQL_DATABASE=laravel
+      - MYSQL_USER=default
+      - MYSQL_PASSWORD=secret
+      - MYSQL_ROOT_PASSWORD=root
+#      - TZ=
+    volumes:
+      - ./mysql/data:/var/lib/mysql
+      - ./mysql/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+    ports:
+      - "3306:3306"
+    networks:
+      - backend
+
+  nginx:
+    build: ./nginx
+    volumes:
+      - ./nginx/data/log:/var/log/nginx
+    ports:
+      - "8080:80"
+    networks:
+      - frontend
+      - backend
+
+  redis:
+    build: ./redis
+    volumes:
+      - ./redis/data:/data
+    expose:
+      - 6379
+    networks:
+      - backend
